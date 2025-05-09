@@ -1,0 +1,16 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile.cpu"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": [
+        "vscodevim.vim",
+        "ms-python.isort",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker"
+      ],
+    }
+  }
+}
