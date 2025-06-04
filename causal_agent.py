@@ -22,6 +22,7 @@ import logging
 from dotenv import load_dotenv
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import BaseTool
+from pydantic import BaseModel, Field
 
 # Configure logging
 logging.basicConfig(
@@ -64,24 +65,42 @@ class CausalDiscoveryState:
         }
 
 
+class DataAnalysisToolSchema(BaseModel):
+    """Schema for DataAnalysisTool inputs"""
+
+    query: str = Field(
+        default="Perform exploratory data analysis",
+        description="The analysis query or description",
+    )
+
+
 class DataAnalysisTool(BaseTool):
-    name = "perform_data_analysis"
-    description = """Perform exploratory data analysis on the dataset.
+    name: str = "perform_data_analysis"
+    description: str = """Perform exploratory data analysis on the dataset.
     This tool will:
     1. Analyze data quality and characteristics
     2. Generate statistical summaries
     3. Create visualizations
     4. Identify potential causal relationships
     """
+    eda: Any = None
+    args_schema: type[BaseModel] = DataAnalysisToolSchema
 
     def __init__(self, eda: EDA):
         super().__init__()
         self.eda = eda
 
-    def _run(self, query: str) -> str:
-        """Run the EDA tool"""
+    def _run(self, query: str = "Perform exploratory data analysis") -> str:
+        """Run the EDA tool
+
+        Args:
+            query (str): The analysis query or description. Defaults to "Perform exploratory data analysis".
+
+        Returns:
+            str: Result of the EDA analysis
+        """
         try:
-            logger.info("Starting EDA analysis")
+            logger.info(f"Starting EDA analysis with query: {query}")
             self.eda.generate_eda()
             logger.info("EDA completed successfully")
             return "EDA completed successfully. Check the output directory for visualizations and analysis."
@@ -90,15 +109,28 @@ class DataAnalysisTool(BaseTool):
             return f"Error performing EDA: {str(e)}"
 
 
+class AlgorithmSelectionToolSchema(BaseModel):
+    """Schema for AlgorithmSelectionTool inputs"""
+
+    query: str = Field(
+        default="Select and configure the most appropriate causal discovery algorithm",
+        description="The query or description for algorithm selection",
+    )
+
+
 class AlgorithmSelectionTool(BaseTool):
-    name = "select_algorithm"
-    description = """Select and configure the most appropriate causal discovery algorithm.
+    name: str = "select_algorithm"
+    description: str = """Select and configure the most appropriate causal discovery algorithm.
     This tool will:
     1. Filter suitable algorithms based on data characteristics
     2. Rerank algorithms by suitability
     3. Select optimal hyperparameters
     4. Configure the chosen algorithm
     """
+    filter: Any = None
+    reranker: Any = None
+    hp_selector: Any = None
+    args_schema: type[BaseModel] = AlgorithmSelectionToolSchema
 
     def __init__(
         self,
@@ -111,10 +143,20 @@ class AlgorithmSelectionTool(BaseTool):
         self.reranker = reranker
         self.hp_selector = hp_selector
 
-    def _run(self, query: str) -> str:
-        """Run the algorithm selection pipeline"""
+    def _run(
+        self,
+        query: str = "Select and configure the most appropriate causal discovery algorithm",
+    ) -> str:
+        """Run the algorithm selection pipeline
+
+        Args:
+            query (str): The query or description for algorithm selection.
+
+        Returns:
+            str: Result of the algorithm selection process
+        """
         try:
-            logger.info("Starting algorithm selection")
+            logger.info(f"Starting algorithm selection with query: {query}")
 
             # Filter algorithms
             logger.info("Filtering algorithms")
@@ -137,24 +179,44 @@ class AlgorithmSelectionTool(BaseTool):
             return f"Error selecting algorithm: {str(e)}"
 
 
+class CausalDiscoveryToolSchema(BaseModel):
+    """Schema for CausalDiscoveryTool inputs"""
+
+    query: str = Field(
+        default="Run causal discovery algorithm and generate results",
+        description="The query or description for causal discovery",
+    )
+
+
 class CausalDiscoveryTool(BaseTool):
-    name = "run_causal_discovery"
-    description = """Run the causal discovery algorithm and generate results.
+    name: str = "run_causal_discovery"
+    description: str = """Run the causal discovery algorithm and generate results.
     This tool will:
     1. Execute the selected algorithm
     2. Generate causal graphs
     3. Compute causal relationships
     4. Store results for visualization and reporting
     """
+    programmer: Any = None
+    args_schema: type[BaseModel] = CausalDiscoveryToolSchema
 
     def __init__(self, programmer: Programming):
         super().__init__()
         self.programmer = programmer
 
-    def _run(self, query: str) -> str:
-        """Run the causal discovery algorithm"""
+    def _run(
+        self, query: str = "Run causal discovery algorithm and generate results"
+    ) -> str:
+        """Run the causal discovery algorithm
+
+        Args:
+            query (str): The query or description for causal discovery.
+
+        Returns:
+            str: Result of the causal discovery process
+        """
         try:
-            logger.info("Starting causal discovery")
+            logger.info(f"Starting causal discovery with query: {query}")
             global_state = self.programmer.forward(self.programmer.global_state)
             logger.info("Causal discovery completed")
             return (
@@ -165,24 +227,44 @@ class CausalDiscoveryTool(BaseTool):
             return f"Error running causal discovery: {str(e)}"
 
 
+class VisualizationToolSchema(BaseModel):
+    """Schema for VisualizationTool inputs"""
+
+    query: str = Field(
+        default="Create visualizations of the causal discovery results",
+        description="The query or description for visualization",
+    )
+
+
 class VisualizationTool(BaseTool):
-    name = "visualize_results"
-    description = """Create visualizations of the causal discovery results.
+    name: str = "visualize_results"
+    description: str = """Create visualizations of the causal discovery results.
     This tool will:
     1. Generate causal graphs
     2. Create summary visualizations
     3. Compare with ground truth (if available)
     4. Save visualizations to output directory
     """
+    visualizer: Any = None
+    args_schema: type[BaseModel] = VisualizationToolSchema
 
     def __init__(self, visualizer: Visualization):
         super().__init__()
         self.visualizer = visualizer
 
-    def _run(self, query: str) -> str:
-        """Create visualizations"""
+    def _run(
+        self, query: str = "Create visualizations of the causal discovery results"
+    ) -> str:
+        """Create visualizations
+
+        Args:
+            query (str): The query or description for visualization.
+
+        Returns:
+            str: Result of the visualization process
+        """
         try:
-            logger.info("Starting visualization")
+            logger.info(f"Starting visualization with query: {query}")
             global_state = self.visualizer.global_state
 
             if (
@@ -225,9 +307,18 @@ class VisualizationTool(BaseTool):
             return f"Error creating visualizations: {str(e)}"
 
 
+class ReportGenerationToolSchema(BaseModel):
+    """Schema for ReportGenerationTool inputs"""
+
+    query: str = Field(
+        default="Generate comprehensive report of the causal discovery process",
+        description="The query or description for report generation",
+    )
+
+
 class ReportGenerationTool(BaseTool):
-    name = "generate_report"
-    description = """Generate a comprehensive report of the causal discovery process.
+    name: str = "generate_report"
+    description: str = """Generate a comprehensive report of the causal discovery process.
     This tool will:
     1. Summarize data analysis
     2. Document algorithm selection
@@ -235,15 +326,27 @@ class ReportGenerationTool(BaseTool):
     4. Include visualizations
     5. Generate PDF report
     """
+    report_gen: Any = None
+    args_schema: type[BaseModel] = ReportGenerationToolSchema
 
     def __init__(self, report_gen: Report_generation):
         super().__init__()
         self.report_gen = report_gen
 
-    def _run(self, query: str) -> str:
-        """Generate the report"""
+    def _run(
+        self,
+        query: str = "Generate comprehensive report of the causal discovery process",
+    ) -> str:
+        """Generate the report
+
+        Args:
+            query (str): The query or description for report generation.
+
+        Returns:
+            str: Result of the report generation process
+        """
         try:
-            logger.info("Starting report generation")
+            logger.info(f"Starting report generation with query: {query}")
             report = self.report_gen.generation()
             self.report_gen.save_report(report)
             logger.info("Report generation completed")
@@ -279,6 +382,22 @@ class CausalDiscoveryAgent:
                 self.args.initial_query, global_state.user_data.raw_data
             )
 
+            # Initialize selected features
+            global_state.user_data.selected_features = (
+                global_state.user_data.processed_data.columns.tolist()
+            )
+            global_state.user_data.visual_selected_features = (
+                global_state.user_data.selected_features
+            )
+
+            # Initialize logging structure
+            if not hasattr(global_state.logging, "select_conversation"):
+                global_state.logging.select_conversation = [
+                    {"response": self.args.initial_query}
+                ]
+            if not hasattr(global_state.logging, "graph_conversion"):
+                global_state.logging.graph_conversion = {}
+
             # Collect statistics and knowledge
             logger.info("Collecting statistics and knowledge")
             global_state = stat_info_collection(global_state)
@@ -309,6 +428,11 @@ class CausalDiscoveryAgent:
         try:
             logger.info("Initializing tools")
             self.eda = EDA(self.state.global_state)
+
+            # Initialize EDA results
+            if not hasattr(self.state.global_state.results, "eda"):
+                self.state.global_state.results.eda = {}
+
             self.filter = CrewFilter(self.args)
             self.reranker = Reranker(self.args)
             self.hp_selector = HyperparameterSelector(self.args)
@@ -400,6 +524,7 @@ class CausalDiscoveryAgent:
                 3. Potential causal relationships
                 4. Domain-specific considerations""",
                 agent=self.data_analyzer,
+                expected_output="A comprehensive analysis of the dataset including data quality, statistical properties, and potential causal relationships.",
             )
 
             self.select_algorithm_task = Task(
@@ -409,6 +534,7 @@ class CausalDiscoveryAgent:
                 2. Computational requirements
                 3. Expected performance""",
                 agent=self.algorithm_selector,
+                expected_output="The selected causal discovery algorithm with its configuration and justification for the selection.",
             )
 
             self.perform_analysis_task = Task(
@@ -419,6 +545,7 @@ class CausalDiscoveryAgent:
                 3. Potential confounding factors
                 4. Limitations of the analysis""",
                 agent=self.causal_analyst,
+                expected_output="A detailed analysis of the causal relationships found, including confidence levels and potential limitations.",
             )
 
             self.generate_report_task = Task(
@@ -430,6 +557,7 @@ class CausalDiscoveryAgent:
                 4. Interpretation and implications
                 5. Limitations and future work""",
                 agent=self.report_generator,
+                expected_output="A comprehensive PDF report documenting the entire causal discovery process and its findings.",
             )
 
             logger.info("Tasks initialization completed")
@@ -540,10 +668,35 @@ if __name__ == "__main__":
         help="Data mode",
     )
     parser.add_argument(
+        "--simulation-mode",
+        type=str,
+        default="offline",
+        choices=["online", "offline"],
+        help="Simulation mode",
+    )
+    parser.add_argument(
         "--initial-query",
         type=str,
         default="Do causal discovery on this dataset",
         help="Initial query",
+    )
+    parser.add_argument(
+        "--demo-mode",
+        type=bool,
+        default=False,
+        help="Run in demo mode",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Enable debug mode",
+    )
+    parser.add_argument(
+        "--parallel",
+        type=bool,
+        default=False,
+        help="Enable parallel computing",
     )
 
     args = parser.parse_args()
