@@ -175,19 +175,22 @@ class CausalDiscoveryAgent:
                 role="Planner and Evaluator of the causal analysis process",
                 goal="""Design a sequence of subgoals to answer a scientific causal question provided by the user.
                     Iteratively assign subgoals to the assistant agent, review returned results, critique their quality, 
-                    adjust the analysis plan as needed, and determine when the causal query has been fully answered.""",
+                    adjust the analysis plan as needed, and determine when the causal query has been fully answered. Generate comprehensive reports of the causal discovery process""",
                 backstory="""You are a domain-aware scientific thinker and planner with extensive experience in causal inference workflows.
                     You specialize in breaking down complex scientific questions into structured analytical tasks, critically evaluating outputs, 
                     and steering the research process with rigor and precision. You maintain high scientific standards, adapt plans dynamically, 
                     and ensure all steps stay aligned with the original causal question. You know how to judge when enough evidence has been gathered
-                    to make a defensible causal claim.""",
-                tools=[self.file_read_tool, self.file_writer_tool],  # FileReadTool, FileWriterTool
+                    to make a defensible causal claim.
+                    You are an expert in technical report generation with deep 
+                    knowledge of causal discovery and data analysis. Your role is to create 
+                    clear and comprehensive reports of the causal discovery process and results.""",
+                tools=[self.file_read_tool, self.file_writer_tool, self.report_generation_tool],
                 verbose=True,
             )
 
             self.assistant_agent = Agent(
                 role="Orchestrator of the causal analysis process",
-                goal="""Coordinate the execution of each subgoal by delegating specialized tasks to domain-specific agents, 
+                goal="""Coordinate the execution of each subgoal by delegating specialized tasks to domain-specific agents (among search_agent, verification_agent, data_analyzer, algorithm_selector, causal_analyst, report_generator), 
                     monitor their progress, collect results, and relay the findings to the Scientist Agent for evaluation.
                     Incorporate feedback from the Scientist Agent to refine execution strategies and iterate on subgoal completion.
                     Once all subgoals are complete and approved, compile a final deliverable report summarizing the full causal analysis.""",
@@ -195,70 +198,60 @@ class CausalDiscoveryAgent:
                     You specialize in translating high-level plans into targeted actions by delegating work to specialized agents like search, coding, and discovery agents.
                     You track task progress using shared documents, update subgoal states, and adapt your orchestration strategy based on feedback from the Scientist Agent.
                     You are the glue that keeps all moving parts coordinated, ensuring that subgoals are executed efficiently and aligned with scientific expectations.""",
-                tools=[self.file_read_tool, self.file_writer_tool],  # FileReadTool, FileWriterTool
+                tools=[self.file_read_tool, self.file_writer_tool],
                 verbose=True,
                 allow_delegation=True,
             )
 
             self.search_agent = Agent(
                 role="Causal Inference Search Agent",
-                goal="""Uncover cutting-edge developments in causal inference""",
+                goal="""Complete any subsubgoal assigned to you. Uncover cutting-edge developments in causal inference""",
                 backstory="""You're a seasoned researcher with a knack for uncovering the latest
                     developments in causal inference. Known for your ability to find the most relevant
                     information and present it in a clear and concise manner.""",
-                tools=[self.serper_dev_tool, self.scrape_website_tool],  # SerperDevTool, ScrapeWebsiteTool
+                tools=[self.file_read_tool, self.file_writer_tool, self.serper_dev_tool, self.scrape_website_tool],
                 verbose=True,
                 allow_delegation=True,
             )
 
             self.verification_agent = Agent(
                 role="Causal Inference Verification Agent",
-                goal="""Verify the correctness of causal inference tasks and results""",
+                goal="""Complete any subsubgoal assigned to you. Verify the correctness of causal inference tasks and results""",
                 backstory="""You are a meticulous verifier. You check the validity of data, DAGs, SCMs, and results, 
                     performing a thorough literature review and ensuring that all results are logically sound 
                     and consistent with causal principles.""",
-                tools=[self.EXA_search_tool],  # EXASearchTool
+                tools=[self.file_read_tool, self.file_writer_tool, self.EXA_search_tool],
                 verbose=True,
                 allow_delegation=True,
             )
 
-            self.data_analyzer = Agent(
+            self.data_analyzer_agent = Agent(
                 role="Data Analysis Expert",
-                goal="Analyze data characteristics and perform EDA",
+                goal="Complete any subsubgoal assigned to you. Analyze data characteristics and perform EDA",
                 backstory="""You are an expert in data analysis with deep knowledge of 
                 statistical properties and data characteristics. Your role is to analyze 
                 the dataset and identify key features that will influence causal discovery.""",
-                tools=[self.data_analysis_tool],  # DataAnalysisTool
+                tools=[self.file_read_tool, self.file_writer_tool, self.data_analysis_tool],
                 verbose=True,
             )
 
-            self.algorithm_selector = Agent(
+            self.algorithm_selector_agent = Agent(
                 role="Causal Discovery Algorithm Expert",
-                goal="Select and configure the most appropriate causal discovery algorithm",
+                goal="Complete any subsubgoal assigned to you. Select and configure the most appropriate causal discovery algorithm",
                 backstory="""You are an expert in causal discovery algorithms with deep 
                 knowledge of their assumptions, advantages, and limitations. Your role is 
                 to select and configure the most appropriate algorithm based on data characteristics.""",
-                tools=[self.algorithm_selection_tool],  # AlgorithmSelectionTool
+                tools=[self.file_read_tool, self.file_writer_tool, self.algorithm_selection_tool],
                 verbose=True,
             )
 
-            self.causal_analyst = Agent(
+            self.causal_analyst_agent = Agent(
                 role="Causal Analysis Expert",
-                goal="Perform causal discovery and interpret results",
+                goal="Complete any subsubgoal assigned to you. Perform causal discovery and interpret results",
                 backstory="""You are an expert in causal analysis with deep knowledge of 
                 causal inference and interpretation. Your role is to perform causal discovery 
                 and provide meaningful interpretations of the results.""",
-                tools=[self.causal_discovery_tool, self.visualization_tool],  # CausalDiscoveryTool and VisualizationTool
-                verbose=True,
-            )
-
-            self.report_generator = Agent(
-                role="Report Generation Expert",
-                goal="Generate comprehensive reports of the causal discovery process",
-                backstory="""You are an expert in technical report generation with deep 
-                knowledge of causal discovery and data analysis. Your role is to create 
-                clear and comprehensive reports of the causal discovery process and results.""",
-                tools=[self.report_generation_tool],  # ReportGenerationTool
+                tools=[self.file_read_tool, self.file_writer_tool, self.causal_discovery_tool, self.visualization_tool],
                 verbose=True,
             )
 
@@ -315,7 +308,7 @@ class CausalDiscoveryAgent:
 
             self.start_subgoal_task = Task(
                 description="""Read 'SubGoals.json' and identify the first subgoal where status != 'completed' and (score == null or score < {threshold}). Utilize feedback from the Scientist Agent if available.
-                    Decompose this subgoal into 2-4 smaller, very concrete subsubgoals that can be executed independently, each meant for and assigned to a specialized agent (for now, assume all are for dummy_specialized_agent).
+                    Decompose this subgoal into 2-4 smaller, very concrete subsubgoals that can be executed independently, each meant for and assigned to a specialized agent among search_agent, verification_agent, data_analyzer, algorithm_selector, causal_analyst, report_generator.
 
                     For example:
                     - If the subgoal involves causal discovery, assign:
@@ -326,13 +319,11 @@ class CausalDiscoveryAgent:
                     • Literature search to SearchAgent
                     • Counterfactual simulation to VerificationAgent
 
-                    For now, assume all are for dummy_specialized_agent
-
                     Save the resulting subsubgoals to a file named 'SubSubGoals.json'. Each subsubgoal must include:
                     - id: unique subsubgoal ID
                     - parent_id: corresponding subgoal ID
                     - description: a detailed, concrete task definition
-                    - assigned_agent: name of the agent responsible (for now, assume all are for dummy_specialized_agent)
+                    - assigned_agent: name of the agent responsible
                     - status: initialized as 'pending'
                     - tool_hints: optional suggestions (e.g., algorithm or dataset to use)
                     - output: null
@@ -418,8 +409,6 @@ class CausalDiscoveryAgent:
 
                     Save all updates back to 'SubGoals.json'.
 
-                    Important note: for now, provide a score of 1.0 no matter what output is returned by the dummy_specialized_agent.
-
                     Evaluation threshold: {threshold}""",
                 agent=self.scientist_agent,
                 expected_output="""'SubGoals.json' is updated with:
@@ -430,42 +419,60 @@ class CausalDiscoveryAgent:
             )
 
             self.verification_task = Task(
-                description="""The results of our causal inference task are given here:
+                description="""Read 'SubSubGoals.json' and find all subsubgoals assigned to 'verification_agent' with status='pending'. 
+                    The results of our causal inference task are given here:
                     {causal_results}
                     Break down the results into bullet points and verify, or refute, each one with sources.
                     Ensure that all conclusions are logically sound and consistent with information given in the literature.
-                    If there is evidence contrary to the conclusions, please provide a detailed explanation, with sources""",
+                    If there is evidence contrary to the conclusions, please provide a detailed explanation, with sources
+                    For eachsubsubgoal:
+                        - Mark the subsubgoal as 'completed'
+                        - Save the result in the field called 'output'
+
+                    Save the updated subsubgoals back to 'SubSubGoals.json'.""",
                 agent=self.verification_agent,
-                expected_output="""A verification report detailing the validity of data, DAGs, SCMs, and results, along with links to any 
-                    sources or references used. Formatted as markdown with bullet points.""",
+                expected_output="""
+                    Each 'verification_agent' subsubgoal in 'SubSubGoals.json' is updated with:
+                    - status='completed'
+                    - output: A verification report detailing the validity of data, DAGs, SCMs, and results, along with links to any 
+                        sources or references used. Formatted as markdown with bullet points.""",
             )
 
             self.search_task = Task(
-                description="""Conduct a deep and comprehensive literature review on the topic: **{topic}**.
+                description="""Read 'SubSubGoals.json' and find all subsubgoals assigned to 'search_agent' with status='pending'. 
+                    Conduct a deep and comprehensive literature review on the topic: **{topic}**.
                     Your goal is to identify and compile **all relevant and significant publications** related to this topic
                     — including foundational works, recent breakthroughs, state-of-the-art techniques, and ongoing debates.
                     Focus on academic research papers, conference proceedings, preprints, technical reports, and any
                     high-quality secondary sources. Use only trusted sources and scholarly databases (e.g., Google Scholar, arXiv, Semantic Scholar).
                     The agent should attempt to retrieve more than 10 papers by either paginating through search results or issuing multiple semantically similar queries.
-                    The review should reflect the literature available as of {date}.""",
-                agent=self.search_agent,
-                expected_output="""Return a detailed list of **all relevant research papers and sources** for the topic **{topic}**.
-                    For each entry, include the following:
-                    - **Title** of the paper or publication
-                    - **Author(s)**
-                    - **Year** of publication
-                    - **Venue** (e.g., NeurIPS, Nature, arXiv, JMLR, etc.)
-                    - A **2–3 sentence summary** of the main contribution
-                    - A **direct link to the Google Scholar search result** or profile for that paper
-                    - A **direct PDF or publisher URL** if available (e.g., arXiv, ACM, Springer, etc.)
-                    - [Optional] **DOI** or citation metadata (if accessible)
+                    The review should reflect the literature available as of {date}.
+                    For eachsubsubgoal:
+                        - Mark the subsubgoal as 'completed'
+                        - Save the result in the field called 'output'
 
-                    The output should be structured clearly in bullet-point or tabular format, and include **as many papers as are genuinely relevant**, not just a fixed number.
-                    Emphasize papers that are **widely cited, novel, or influential**, but include niche papers if they add conceptual or empirical value.""",
+                    Save the updated subsubgoals back to 'SubSubGoals.json'.""",
+                agent=self.search_agent,
+                expected_output="""
+                    Each 'verification_agent' subsubgoal in 'SubSubGoals.json' is updated with:
+                    - status='completed'
+                    - output: For each entry, include the following:
+                        - **Title** of the paper or publication
+                        - **Author(s)**
+                        - **Year** of publication
+                        - **Venue** (e.g., NeurIPS, Nature, arXiv, JMLR, etc.)
+                        - A **2–3 sentence summary** of the main contribution
+                        - A **direct link to the Google Scholar search result** or profile for that paper
+                        - A **direct PDF or publisher URL** if available (e.g., arXiv, ACM, Springer, etc.)
+                        - [Optional] **DOI** or citation metadata (if accessible)
+
+                        The output should be structured clearly in bullet-point or tabular format, and include **as many papers as are genuinely relevant**, not just a fixed number.
+                        Emphasize papers that are **widely cited, novel, or influential**, but include niche papers if they add conceptual or empirical value.""",
             )
 
             self.analyze_data_task = Task(
-                description=f"""Analyze the following dataset:
+                description=f"""
+                Read 'SubSubGoals.json' and find all subsubgoals assigned to 'data_analyzer_agent' with status='pending'. Analyze the following dataset:
                 Data Shape: {self.state.data.shape}
                 Columns: {", ".join(self.state.data.columns)}
                 Statistics: {json.dumps(self.state.statistics, indent=2)}
@@ -475,30 +482,53 @@ class CausalDiscoveryAgent:
                 1. Data quality issues
                 2. Statistical properties
                 3. Potential causal relationships
-                4. Domain-specific considerations""",
-                agent=self.data_analyzer,
-                expected_output="A comprehensive analysis of the dataset including data quality, statistical properties, and potential causal relationships.",
+                4. Domain-specific considerations
+                For eachsubsubgoal:
+                    - Mark the subsubgoal as 'completed'
+                    - Save the result in the field called 'output'
+
+                Save the updated subsubgoals back to 'SubSubGoals.json'.""",
+                agent=self.data_analyzer_agent,
+                expected_output="""Each 'data_analyzer_agent' subsubgoal in 'SubSubGoals.json' is updated with:
+                    - status='completed'
+                    - output: A comprehensive analysis of the dataset including data quality, statistical properties, and potential causal relationships.""",
             )
 
             self.select_algorithm_task = Task(
-                description="""Based on the data analysis, select and configure the most 
+                description="""Read 'SubSubGoals.json' and find all subsubgoals assigned to 'algorithm_selector_agent' with status='pending'. 
+                Based on the data analysis, select and configure the most 
                 appropriate causal discovery algorithm. Consider:
                 1. Algorithm assumptions and data characteristics match
                 2. Computational requirements
-                3. Expected performance""",
-                agent=self.algorithm_selector,
-                expected_output="The selected causal discovery algorithm with its configuration and justification for the selection.",
+                3. Expected performance
+                For eachsubsubgoal:
+                    - Mark the subsubgoal as 'completed'
+                    - Save the result in the field called 'output'
+
+                Save the updated subsubgoals back to 'SubSubGoals.json'.""",
+                agent=self.algorithm_selector_agent,
+                expected_output="""Each 'algorithm_selector_agent' subsubgoal in 'SubSubGoals.json' is updated with:
+                    - status='completed'
+                    - output: The selected causal discovery algorithm with its configuration and justification for the selection.""",
             )
 
             self.perform_analysis_task = Task(
-                description="""Using the selected algorithm, perform causal discovery and 
+                description="""Read 'SubSubGoals.json' and find all subsubgoals assigned to 'causal_analyst_agent' with status='pending'. 
+                Using the selected algorithm, perform causal discovery and 
                 interpret the results. Consider:
                 1. Causal relationships identified
                 2. Confidence in the relationships
                 3. Potential confounding factors
-                4. Limitations of the analysis""",
-                agent=self.causal_analyst,
-                expected_output="A detailed analysis of the causal relationships found, including confidence levels and potential limitations.",
+                4. Limitations of the analysis
+                For eachsubsubgoal:
+                    - Mark the subsubgoal as 'completed'
+                    - Save the result in the field called 'output'
+
+                Save the updated subsubgoals back to 'SubSubGoals.json'.""",
+                agent=self.causal_analyst_agent,
+                expected_output="""Each 'causal_analyst_agent' subsubgoal in 'SubSubGoals.json' is updated with:
+                    - status='completed'
+                    - output: A detailed analysis of the causal relationships found, including confidence levels and potential limitations.""",
             )
 
             self.generate_report_task = Task(
@@ -509,7 +539,7 @@ class CausalDiscoveryAgent:
                 3. Causal discovery results
                 4. Interpretation and implications
                 5. Limitations and future work""",
-                agent=self.report_generator,
+                agent=self.scientist_agent,
                 expected_output="A comprehensive PDF report documenting the entire causal discovery process and its findings.",
             )
 
@@ -524,24 +554,49 @@ class CausalDiscoveryAgent:
             logger.info(f"Running agent with query: {query}")
 
             # Create and run the crew
-            crew = Crew(
+            specialized_crew = Crew(
                 agents=[
-                    self.data_analyzer,
-                    self.algorithm_selector,
-                    self.causal_analyst,
-                    self.report_generator,
+                    self.search_agent,
+                    self.verification_agent,
+                    self.data_analyzer_agent,
+                    self.algorithm_selector_agent,
+                    self.causal_analyst_agent,
                 ],
                 tasks=[
+                    self.search_task,
+                    self.verification_task,
                     self.analyze_data_task,
                     self.select_algorithm_task,
                     self.perform_analysis_task,
                     self.generate_report_task,
                 ],
-                process=Process.sequential,
+                process=Process.hierarchical,
                 verbose=True,
             )
 
-            result = crew.kickoff()
+            print("🔁 Executing: create_plan")
+            Crew(agents=[self.scientist_agent], tasks=[self.create_plan_task], verbose=True).kickoff(inputs=inputs)
+
+            while True:
+                print("🔁 Executing: start_subgoal")
+                Crew(agents=[self.assistant_agent], tasks=[self.start_subgoal_task], verbose=True).kickoff(inputs=inputs)
+
+                print("🔁 Executing: run_specialized_subsubgoals")
+                specialized_crew.kickoff(inputs=inputs)
+
+                print("🔁 Executing: collect_subgoal_results")
+                Crew(agents=[self.assistant_agent], tasks=[self.collect_subgoal_results_task], verbose=True).kickoff(inputs=inputs)
+
+                print("🔁 Executing: evaluate_subgoal")
+                Crew(agents=[self.scientist_agent], tasks=[self.evaluate_subgoal_task], verbose=True).kickoff(inputs=inputs)
+
+                with open("SubGoals.json", "r") as f:
+                    subgoals = json.load(f)
+                if all(sg["status"] == "completed" for sg in subgoals):
+                    print("✅ All subgoals completed.")
+                    break
+
+            Crew(agents=[self.scientist_agent], tasks=[self.generate_report_task], verbose=True).kickoff(inputs=inputs)
             self.state.update_from_global_state()
             logger.info("Agent run completed")
             return result
