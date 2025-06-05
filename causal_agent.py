@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Any
+import datetime
 import pandas as pd
 import numpy as np
 from dataclasses import dataclass
@@ -126,6 +127,9 @@ class CausalDiscoveryAgent:
                     "graph": self.args.output_graph_dir,
                 },
                 global_state=global_state,
+                threshold=0.75,
+                summary_style="structured",
+                data_path=self.args.data_file,
             )
             logger.info("State initialization completed")
         except Exception as e:
@@ -266,7 +270,7 @@ class CausalDiscoveryAgent:
             logger.info("Initializing tasks")
             
             self.create_plan_task = Task(
-                description="""You are given a causal question or a dataset with a user query. Begin by identifying the treatment(s), outcome(s),
+                description=f"""You are given a causal question or a dataset with a user query. Begin by identifying the treatment(s), outcome(s),
                     and any relevant confounders or domain assumptions. Use this information to formulate a causal analysis plan consisting
                     of structured high-level subgoals, each targeting a phase in the pipeline such as:
                     - Background literature search and constraint identification
@@ -279,8 +283,8 @@ class CausalDiscoveryAgent:
                     For each subgoal, specify the objective and expected output only. Do not assign agents — this will be handled in later steps.
                     Write the resulting subgoal list to 'SubGoals.json'.
 
-                    User query: {causal_query}
-                    Dataset: {dataset_name}""",
+                    User query: {self.state.global_state.user_data.initial_query}
+                    Dataset: {self.state.data_path}""",
                 agent=self.scientist_agent,
                 expected_output="""A file named 'SubGoals.json' containing a list of 4-6 high-level subgoals tailored to the causal question. Each subgoal must include:
 
@@ -307,7 +311,7 @@ class CausalDiscoveryAgent:
             )
 
             self.start_subgoal_task = Task(
-                description="""Read 'SubGoals.json' and identify the first subgoal where status != 'completed' and (score == null or score < {threshold}). Utilize feedback from the Scientist Agent if available.
+                description=f"""Read 'SubGoals.json' and identify the first subgoal where status != 'completed' and (score == null or score < {self.state.threshold}). Utilize feedback from the Scientist Agent if available.
                     Decompose this subgoal into 2-4 smaller, very concrete subsubgoals that can be executed independently, each meant for and assigned to a specialized agent among search_agent, verification_agent, data_analyzer, algorithm_selector, causal_analyst, report_generator.
 
                     For example:
@@ -330,7 +334,7 @@ class CausalDiscoveryAgent:
 
                     Also, update the corresponding subgoal in 'SubGoals.json' to status='in_progress'.
 
-                    Threshold: {threshold}""",
+                    Threshold: {self.state.threshold}""",
                 agent=self.assistant_agent,
                 expected_output="""'SubSubGoals.json' containing 2-4 well-defined subsubgoals, each with:
                     - id
@@ -345,7 +349,7 @@ class CausalDiscoveryAgent:
             )
 
             self.collect_subgoal_results_task = Task(
-                description="""Read 'SubSubGoals.json' and identify all subsubgoals with status='completed'. Group them by their parent_id.
+                description=f"""Read 'SubSubGoals.json' and identify all subsubgoals with status='completed'. Group them by their parent_id.
 
                     For each group:
                     1. Synthesize a comprehensive summary of the outputs based on subgoal type:
@@ -361,7 +365,7 @@ class CausalDiscoveryAgent:
                     - 'structured': use numbered bullet points and section headers
                     - 'narrative': use paragraph-style explanation with contextual transitions
 
-                    Summary style: {summary_style}""",
+                    Summary style: {self.state.summary_style}""",
                 agent=self.assistant_agent,
                 expected_output="""'SubGoals.json' is updated with:
                     - combined_result: a synthesized, human-readable summary for each updated subgoal
@@ -369,7 +373,7 @@ class CausalDiscoveryAgent:
             )
 
             self.evaluate_subgoal_task = Task(
-                description="""Read 'SubGoals.json' and identify all subgoals with status='for_review'. For each, review the combined_result field and evaluate its quality using the following criteria:
+                description=f"""Read 'SubGoals.json' and identify all subgoals with status='for_review'. For each, review the combined_result field and evaluate its quality using the following criteria:
 
                     Evaluation by subgoal type:
                     - *Discovery*: assess graph clarity, validity of methods, and confidence in inferred relationships
@@ -402,14 +406,14 @@ class CausalDiscoveryAgent:
                     1. Assign a score between 0.0 and 1.0.
                     2. Provide concise but specific feedback highlighting strengths or deficiencies.
                     3. Compare the score to the threshold:
-                        - If score >= {threshold}, mark the subgoal as 'completed'
-                        - If score < {threshold}, mark it 'pending' and suggest refinements
+                        - If score >= {self.state.threshold}, mark the subgoal as 'completed'
+                        - If score < {self.state.threshold}, mark it 'pending' and suggest refinements
 
                     Re-evaluate the entire plan by looking at the subgoals. If deemed necessary, make changes to the plan. Remove or add subgoals if necessary. Maintain the json fields of the unchanged subgoals as they are, such as status, combined results, etc.
 
                     Save all updates back to 'SubGoals.json'.
 
-                    Evaluation threshold: {threshold}""",
+                    Evaluation threshold: {self.state.threshold}""",
                 agent=self.scientist_agent,
                 expected_output="""'SubGoals.json' is updated with:
                     - score: float between 0.0 and 1.0
@@ -419,9 +423,8 @@ class CausalDiscoveryAgent:
             )
 
             self.verification_task = Task(
-                description="""Read 'SubSubGoals.json' and find all subsubgoals assigned to 'verification_agent' with status='pending'. 
-                    The results of our causal inference task are given here:
-                    {causal_results}
+                description=f"""Read 'SubSubGoals.json' and find all subsubgoals assigned to 'verification_agent' with status='pending'. 
+                    The results of our causal inference task are available in 'SubSubGoals.json'.
                     Break down the results into bullet points and verify, or refute, each one with sources.
                     Ensure that all conclusions are logically sound and consistent with information given in the literature.
                     If there is evidence contrary to the conclusions, please provide a detailed explanation, with sources
@@ -439,14 +442,14 @@ class CausalDiscoveryAgent:
             )
 
             self.search_task = Task(
-                description="""Read 'SubSubGoals.json' and find all subsubgoals assigned to 'search_agent' with status='pending'. 
-                    Conduct a deep and comprehensive literature review on the topic: **{topic}**.
+                description=f"""Read 'SubSubGoals.json' and find all subsubgoals assigned to 'search_agent' with status='pending'. 
+                    Conduct a deep and comprehensive literature review on the topic: **{self.state.global_state.user_data.initial_query}**.
                     Your goal is to identify and compile **all relevant and significant publications** related to this topic
                     — including foundational works, recent breakthroughs, state-of-the-art techniques, and ongoing debates.
                     Focus on academic research papers, conference proceedings, preprints, technical reports, and any
                     high-quality secondary sources. Use only trusted sources and scholarly databases (e.g., Google Scholar, arXiv, Semantic Scholar).
                     The agent should attempt to retrieve more than 10 papers by either paginating through search results or issuing multiple semantically similar queries.
-                    The review should reflect the literature available as of {date}.
+                    The review should reflect the literature available as of {datetime.date.today()}.
                     For eachsubsubgoal:
                         - Mark the subsubgoal as 'completed'
                         - Save the result in the field called 'output'
@@ -575,20 +578,20 @@ class CausalDiscoveryAgent:
             )
 
             print("🔁 Executing: create_plan")
-            Crew(agents=[self.scientist_agent], tasks=[self.create_plan_task], verbose=True).kickoff(inputs=inputs)
+            Crew(agents=[self.scientist_agent], tasks=[self.create_plan_task], verbose=True).kickoff()
 
             while True:
                 print("🔁 Executing: start_subgoal")
-                Crew(agents=[self.assistant_agent], tasks=[self.start_subgoal_task], verbose=True).kickoff(inputs=inputs)
+                Crew(agents=[self.assistant_agent], tasks=[self.start_subgoal_task], verbose=True).kickoff()
 
                 print("🔁 Executing: run_specialized_subsubgoals")
-                specialized_crew.kickoff(inputs=inputs)
+                specialized_crew.kickoff()
 
                 print("🔁 Executing: collect_subgoal_results")
-                Crew(agents=[self.assistant_agent], tasks=[self.collect_subgoal_results_task], verbose=True).kickoff(inputs=inputs)
+                Crew(agents=[self.assistant_agent], tasks=[self.collect_subgoal_results_task], verbose=True).kickoff()
 
                 print("🔁 Executing: evaluate_subgoal")
-                Crew(agents=[self.scientist_agent], tasks=[self.evaluate_subgoal_task], verbose=True).kickoff(inputs=inputs)
+                Crew(agents=[self.scientist_agent], tasks=[self.evaluate_subgoal_task], verbose=True).kickoff()
 
                 with open("SubGoals.json", "r") as f:
                     subgoals = json.load(f)
@@ -596,10 +599,9 @@ class CausalDiscoveryAgent:
                     print("✅ All subgoals completed.")
                     break
 
-            Crew(agents=[self.scientist_agent], tasks=[self.generate_report_task], verbose=True).kickoff(inputs=inputs)
+            Crew(agents=[self.scientist_agent], tasks=[self.generate_report_task], verbose=True).kickoff()
             self.state.update_from_global_state()
             logger.info("Agent run completed")
-            return result
         except Exception as e:
             logger.error(f"Error running agent: {str(e)}")
             return f"Error: {str(e)}"
@@ -711,5 +713,4 @@ if __name__ == "__main__":
     agent = main(args)
 
     # Example interaction
-    response = agent.run("Analyze this dataset and find causal relationships")
-    print(response)
+    agent.run("Analyze this dataset and find causal relationships")
