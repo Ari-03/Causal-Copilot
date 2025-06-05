@@ -1,0 +1,17 @@
+### Verification Report for Subsubgoal: Compile citations for the relevant papers
+
+**Overview:**
+- The compilation of citations from recent literature highlights methodologies in causal inference, including techniques for verification.
+
+**Key Points:**
+- **Causal Inference Methodologies:** 
+  - A recent paper titled '[Validating Causal Inference Methods](https://arxiv.org/pdf/2202.04208.pdf)' by Harsh Parikh et al. presents methodologies for validating causal inference findings, emphasizing the importance of robust statistical methods and graphical models for establishing causal relationships. This paper can serve as an important reference for our verification efforts.
+
+- **Use of Clinical Trials:** 
+  - The study '[Using public clinical trial reports to probe non-experimental causal inference methods](https://bmcmedresmethodol.biomedcentral.com/counter/pdf/10.1186/s12874-023-02025-0.pdf)' supports the assertion that existing clinical data can be effectively utilized to analyze and harness causal inference methodologies in epidemiological research.
+
+- **Recent Trends:** 
+  - The work '[Causal inference methodologies to assess the effect of missed clinic visits on treatment success rate among people with tuberculosis in rural Uganda](https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-025-02553-x)' highlights practical applications of causal inference in real-world scenarios, validating its relevance and significance in addressing health outcomes.
+
+**Conclusion:** 
+- The literature supports the conclusion that causal inference methodologies are well-founded and provide a comprehensive basis for verification tasks. The methods described are increasingly being validated through empirical studies across various domains, including health and clinical research.

@@ -216,7 +216,7 @@ class CausalDiscoveryAgent:
                 backstory="""You're a seasoned researcher with a knack for uncovering the latest
                     developments in causal inference. Known for your ability to find the most relevant
                     information and present it in a clear and concise manner.""",
-                tools=[self.file_read_tool, self.file_writer_tool, self.serper_dev_tool, self.scrape_website_tool],
+                tools=[self.file_read_tool, self.file_writer_tool, self.EXA_search_tool, self.scrape_website_tool],
                 verbose=True,
                 allow_delegation=True,
             )
@@ -597,7 +597,7 @@ class CausalDiscoveryAgent:
             Crew(agents=[self.scientist_agent], tasks=[self.evaluate_subgoal_task], verbose=True, memory=True).kickoff()
 
             with open("SubGoals.json", "r") as f:
-                subgoals = json.load(f)
+                subgoals = json.load(f)["SubGoals"]
             if all(sg["status"] == "completed" for sg in subgoals):
                 print("✅ All subgoals completed.")
                 break

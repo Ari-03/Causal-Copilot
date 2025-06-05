@@ -1,0 +1,10 @@
+[project]
+name = "causal-copilot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "crewai[tools]>=0.126.0",
+    "exa-py>=1.14.2",
+]

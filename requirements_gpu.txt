@@ -69,7 +69,7 @@ pygments==2.18.0
 pyparsing==3.2.0
 pypdf2==3.0.1
 python-dateutil==2.9.0.post0
-python-multipart==0.0.12
+python-multipart==0.0.18
 pytz==2024.2
 pyvis==0.3.2
 pywhy-graphs==0.1.0

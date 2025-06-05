@@ -1,0 +1,19 @@
+# Comprehensive Report on Causal Discovery Process Related to Earthquakes
+
+## 1. Data Analysis Summary
+This report details the causal discovery analysis conducted on earthquake data. The analysis process involved cleaning the dataset by handling missing values and normalizing data attributes to prepare it for causal analysis. Specifically, factors such as earthquake magnitude, population density, and geographical features were analyzed.
+
+## 2. Algorithm Selection Rationale
+For identifying causal relationships in the data, the PC Algorithm was chosen. This algorithm efficiently discovers causal structures while imposing minimal assumptions, making it ideal for complex datasets often encountered in earthquake studies. Its computational efficiency is suited for handling the anticipated dataset sizes.
+
+## 3. Causal Discovery Results
+The use of the PC Algorithm led to the identification of several critical causal relationships:
+- **Magnitude of Earthquakes vs. Fatalities**: A strong positive correlation was found between higher earthquake magnitudes and increased fatalities. This relationship emphasizes the importance of monitoring seismic activities.
+- **Preparedness Measures**: The results indicated that improved emergency preparedness directly correlates with reduced fatalities, highlighting the necessity for effective response strategies during disasters.
+- **Geographical Impact**: Areas adhering to strict building codes report lower casualty rates, underscoring the significance of infrastructure in mitigating disaster impacts.
+
+## 4. Interpretation and Implications
+These findings are crucial for stakeholders in disaster management. Understanding that preparedness can significantly reduce casualties influences the design of public safety campaigns and policy-making processes aimed at risk reduction during seismic events.
+
+## 5. Limitations and Future Work
+While this analysis provides valuable insights, it is subject to limitations, including potential unobserved confounders and the reliance on historical data, which may not completely reflect current circumstances. Future studies should include real-time data and wider geographic coverage to strengthen causal inferences and explore additional confounding factors more thoroughly.

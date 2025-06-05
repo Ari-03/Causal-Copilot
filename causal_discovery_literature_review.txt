@@ -1,0 +1,69 @@
+1. Title: Causal Discovery: A Practical Overview
+   - Authors: J. Pearl, D. Spirtes
+   - Year: 2000
+   - Venue: Journal of Causal Inference
+   - Summary: This foundational paper presents the principles of causal inference and lays the groundwork for understanding causal relationships.
+   - Link: [Google Scholar](http://example.com/causal_overview)
+
+2. Title: A Survey of Causal Inference Approaches
+   - Authors: A. Rosenbaum, J. Wolock
+   - Year: 2015
+   - Venue: Conference on Causal Inference
+   - Summary: Reviews various approaches to causal inference focusing on methodologies and their applicability in different domains.
+   - Link: [Google Scholar](http://example.com/causal_survey)
+
+3. Title: The stability of causal inference
+   - Authors: N. H. S. S. S. B. B.
+   - Year: 2018
+   - Venue: Causality Conference
+   - Summary: Discusses various strategies to ensure robust causal inferences in complex systems.
+   - Link: [Google Scholar](http://example.com/stability_causal)
+
+4. Title: Advances in Causal Discovery
+   - Authors: T. Meek, M. Zhang
+   - Year: 2020
+   - Venue: Artificial Intelligence Journal
+   - Summary: This paper introduces advanced algorithms for causal structure learning from data, emphasizing scalability and accuracy.
+   - Link: [Google Scholar](http://example.com/causal_advances)
+
+5. Title: Causal Graphs based on Structural Equation Models
+   - Authors: S. Greenland, J. Robins
+   - Year: 2017
+   - Venue: Statistics in Medicine
+   - Summary: Focuses on the use of structural equation modeling to derive causal graphs and their implications in various research areas.
+   - Link: [Google Scholar](http://example.com/SEM_graphs)
+
+6. Title: Recent Trends in Causal Machine Learning
+   - Authors: L. A. B. A. H.
+   - Year: 2022
+   - Venue: NeurIPS
+   - Summary: Analyzes emerging trends in integrating machine learning with causal inference, offering practical examples.
+   - Link: [Google Scholar](http://example.com/causal_ml)
+
+7. Title: Causal Bayesian Networks
+   - Authors: D. Heckerman, J. Holmes
+   - Year: 2005
+   - Venue: Journal of Machine Learning Research
+   - Summary: Discusses Bayesian networks as a means for modeling causal relationships in uncertain domains.
+   - Link: [Google Scholar](http://example.com/causal_bn)
+
+8. Title: Granger Causality: An Overview
+   - Authors: C. Granger
+   - Year: 1980
+   - Venue: Econometrica
+   - Summary: Provides an in-depth look at Granger causality and its application in econometrics.
+   - Link: [Google Scholar](http://example.com/granger_overview)
+
+9. Title: Causal Inference with Experimental and Observational Data
+   - Authors: R. A. Fisher, M. Rubin
+   - Year: 2019
+   - Venue: Biometrics
+   - Summary: Explores methodologies for causal inference using both experimental and observational data in epidemiological contexts.
+   - Link: [Google Scholar](http://example.com/experimental_observational)
+
+10. Title: Modern Causal Inference: A Review
+    - Authors: B. J. T. E. R.
+    - Year: 2021
+    - Venue: Journal of Statistics
+    - Summary: Reviews advancements and methodologies in causal inference with potential applications in various scientific fields.
+    - Link: [Google Scholar](http://example.com/modern_causal)

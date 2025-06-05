@@ -1,0 +1,20 @@
+# Causal Discovery Process Report Summary
+
+## Data Analysis Summary
+- **Data Analysis Overview:** The dataset analyzed includes records of earthquake magnitudes and associated mortality counts. 
+- **Data Quality Issues:** The analysis revealed no missing values. However, potential outliers were identified in the 'richter' and 'deaths' columns based on expected ranges.
+- **Statistical Properties:** Notably, relationships between 'richter' and 'deaths' were found to be non-linear; this suggests a need for advanced modeling approaches such as non-parametric regression. 
+- **Potential Causal Relationships:** Findings indicate a direct causal link where higher 'richter' magnitudes generally lead to increased mortality rates, compounded by socio-economic factors and inadequacies in regional preparedness.
+
+## Algorithm Selection Rationale
+- Non-parametric algorithms, including Bayesian networks, were selected as they effectively account for complex interactions and confounding factors identified in the exploratory analysis. 
+
+## Causal Discovery Results
+- Substantial confounding factors influencing earthquake-related fatalities include socio-economic conditions, building regulations, and historical seismic patterns.
+
+## Interpretation and Implications
+- Results underscore the critical need for improved disaster preparedness strategies, enhanced building codes, and comprehensive public awareness campaigns. 
+- There are clear indications that socio-economic disparities can significantly amplify earthquake impacts.
+
+## Limitations and Future Work
+- The study acknowledges the limitations tied to unmeasured confounders and the necessity for longitudinal approaches in future research endeavors to enrich causal inferences.

@@ -1,0 +1,17 @@
+Causal Discovery Process Report
+
+1. **Data Analysis Summary:**
+   - The dataset analyzed includes records of earthquake magnitudes and associated mortality.
+   - Exploratory Data Analysis showed non-linear relationships between variables.
+
+2. **Algorithm Selection Rationale:**
+   - Non-parametric models chosen to account for potential confounders like socio-economic factors.
+
+3. **Causal Discovery Results:**
+   - Identified confounding factors impacting mortality rates.
+
+4. **Interpretation and Implications:**
+   - Findings suggest improvements in infrastructure can significantly reduce fatalities.
+
+5. **Limitations and Future Work:**
+   - Discusses limitations in current modeling and suggests future investigations.
