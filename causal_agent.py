@@ -46,6 +46,9 @@ class CausalDiscoveryState:
     results: Dict
     output_dirs: Dict[str, str]
     global_state: Any
+    threshold: float
+    summary_style: str
+    data_path: str
 
     def update_from_global_state(self):
         """Update state from global state"""
@@ -161,7 +164,7 @@ class CausalDiscoveryAgent:
             self.report_generation_tool=ReportGenerationTool(self.report_gen)
             self.file_read_tool=FileReadTool()
             self.file_writer_tool=FileWriterTool()
-            self.EXA_search_tool=EXASearchTool(num_results=10, type='auto')
+            self.EXA_search_tool=EXASearchTool(num_results=10, type='auto', api_key=os.getenv("EXA_API_KEY"))
             self.serper_dev_tool=SerperDevTool()
             self.scrape_website_tool=ScrapeWebsiteTool()
 
@@ -553,58 +556,55 @@ class CausalDiscoveryAgent:
 
     def run(self, query: str) -> str:
         """Run the causal discovery agent"""
-        try:
-            logger.info(f"Running agent with query: {query}")
+        logger.info(f"Running agent with query: {query}")
 
-            # Create and run the crew
-            specialized_crew = Crew(
-                agents=[
-                    self.search_agent,
-                    self.verification_agent,
-                    self.data_analyzer_agent,
-                    self.algorithm_selector_agent,
-                    self.causal_analyst_agent,
-                ],
-                tasks=[
-                    self.search_task,
-                    self.verification_task,
-                    self.analyze_data_task,
-                    self.select_algorithm_task,
-                    self.perform_analysis_task,
-                    self.generate_report_task,
-                ],
-                process=Process.hierarchical,
-                verbose=True,
-            )
+        # Create and run the crew
+        specialized_crew = Crew(
+            agents=[
+                self.search_agent,
+                self.verification_agent,
+                self.data_analyzer_agent,
+                self.algorithm_selector_agent,
+                self.causal_analyst_agent,
+            ],
+            tasks=[
+                self.search_task,
+                self.verification_task,
+                self.analyze_data_task,
+                self.select_algorithm_task,
+                self.perform_analysis_task,
+                self.generate_report_task,
+            ],
+            process=Process.sequential,
+            verbose=True,
+            memory=True,
+        )
 
-            print("🔁 Executing: create_plan")
-            Crew(agents=[self.scientist_agent], tasks=[self.create_plan_task], verbose=True).kickoff()
+        print("🔁 Executing: create_plan")
+        Crew(agents=[self.scientist_agent], tasks=[self.create_plan_task], verbose=True, memory=True).kickoff()
 
-            while True:
-                print("🔁 Executing: start_subgoal")
-                Crew(agents=[self.assistant_agent], tasks=[self.start_subgoal_task], verbose=True).kickoff()
+        while True:
+            print("🔁 Executing: start_subgoal")
+            Crew(agents=[self.assistant_agent], tasks=[self.start_subgoal_task], verbose=True, memory=True).kickoff()
 
-                print("🔁 Executing: run_specialized_subsubgoals")
-                specialized_crew.kickoff()
+            print("🔁 Executing: run_specialized_subsubgoals")
+            specialized_crew.kickoff()
 
-                print("🔁 Executing: collect_subgoal_results")
-                Crew(agents=[self.assistant_agent], tasks=[self.collect_subgoal_results_task], verbose=True).kickoff()
+            print("🔁 Executing: collect_subgoal_results")
+            Crew(agents=[self.assistant_agent], tasks=[self.collect_subgoal_results_task], verbose=True, memory=True).kickoff()
 
-                print("🔁 Executing: evaluate_subgoal")
-                Crew(agents=[self.scientist_agent], tasks=[self.evaluate_subgoal_task], verbose=True).kickoff()
+            print("🔁 Executing: evaluate_subgoal")
+            Crew(agents=[self.scientist_agent], tasks=[self.evaluate_subgoal_task], verbose=True, memory=True).kickoff()
 
-                with open("SubGoals.json", "r") as f:
-                    subgoals = json.load(f)
-                if all(sg["status"] == "completed" for sg in subgoals):
-                    print("✅ All subgoals completed.")
-                    break
+            with open("SubGoals.json", "r") as f:
+                subgoals = json.load(f)
+            if all(sg["status"] == "completed" for sg in subgoals):
+                print("✅ All subgoals completed.")
+                break
 
-            Crew(agents=[self.scientist_agent], tasks=[self.generate_report_task], verbose=True).kickoff()
-            self.state.update_from_global_state()
-            logger.info("Agent run completed")
-        except Exception as e:
-            logger.error(f"Error running agent: {str(e)}")
-            return f"Error: {str(e)}"
+        Crew(agents=[self.scientist_agent], tasks=[self.generate_report_task], verbose=True, memory=True).kickoff()
+        self.state.update_from_global_state()
+        logger.info("Agent run completed")
 
     def load_real_world_data(self, file_path):
         """Load real-world data from file"""
